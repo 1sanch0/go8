@@ -3,7 +3,7 @@ package main
 import "math/rand/v2"
 
 const WIDTH = 64
-const HEIGHT = 64
+const HEIGHT = 32
 const MEM_SIZE = 0x1000
 const FONTS_ADDR uint16 = 0x0 // The memory address at which this data resides is unspecified but it's usually lower that 0x200
 var FONT_SPRITES = []uint8{

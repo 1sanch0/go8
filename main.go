@@ -11,19 +11,52 @@ func main() {
   // - The sound timer counts down perpetually @ 60Hz
   //   - The minimum value the timer will respond is 02 (TODO)
 
-	rl.InitWindow(800, 450, "go8 - a simple chip8 interperter in go")
+  // rl.SetTraceLogLevel(rl.LogNone);
+  rl.SetConfigFlags(rl.FlagWindowResizable)
+	rl.InitWindow(WIDTH * 10, HEIGHT * 10, "go8 - a simple chip8 interperter in go")
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(60)
 
+  var chip8Display = rl.LoadRenderTexture(WIDTH, HEIGHT)
+  defer rl.UnloadRenderTexture(chip8Display);
+
+	var srcRec = rl.NewRectangle(0, 0, WIDTH, -HEIGHT)
+	var dstRec = rl.NewRectangle(0, 0, WIDTH, HEIGHT)
+  var origin = rl.NewVector2(0, 0)
+
 	for !rl.WindowShouldClose() {
     dt := rl.GetFrameTime()
+    var width, height = float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())
 
     Chip8_tick(&chip8, dt)
 
+    // TODO: Copy chip8 display buffer to raylib texture
+    // TODO REMOVE THIS LATER
+    rl.BeginTextureMode(chip8Display)
+      rl.ClearBackground(rl.DarkGray)
+      rl.DrawText("  go8", 10, 10, 3, rl.RayWhite)
+    rl.EndTextureMode()
+
+    // Math for keeping texture centered and with the same aspect ratio
+    origin = rl.NewVector2(0, 0)
+    if (width / (WIDTH / HEIGHT)) > height {
+      dstRec.Width = height * (WIDTH / HEIGHT)
+      dstRec.Height = height
+
+      origin.X = -(width - dstRec.Width) / 2
+      if origin.X > 0 { origin.X = 0 }
+    } else {
+      dstRec.Width = width;
+      dstRec.Height = width / (WIDTH / HEIGHT)
+
+      origin.Y = -(height - dstRec.Height) / 2
+      if origin.Y > 0 { origin.Y = 0 }
+    }
+
 		rl.BeginDrawing()
-      rl.ClearBackground(rl.RayWhite)
-		  rl.DrawText("Congrats! You created your first window!", 190, 200, 20, rl.LightGray)
+      rl.ClearBackground(rl.Green)
+      rl.DrawTexturePro(chip8Display.Texture, srcRec, dstRec, origin, 0, rl.White)
 		rl.EndDrawing()
 	}
 }
