@@ -27,3 +27,7 @@ var keyboard = map[uint8]int32 {
 func IsKeyPressed(key uint8) bool {
   return rl.IsKeyDown(keyboard[key]);
 }
+
+func IsKeyReleased(key uint8) bool {
+  return rl.IsKeyReleased(keyboard[key]);
+}

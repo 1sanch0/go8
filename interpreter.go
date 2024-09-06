@@ -236,12 +236,12 @@ func _FX18(chip8 *Chip8, x uint8) { chip8.stimer = chip8.V[x] }
 func _FX0A(chip8 *Chip8, x uint8) {
   pressed := false
   for i := uint8(0); i <= 0xF; i++ {
-    if IsKeyPressed(i) {
+    if IsKeyReleased(i) {
       chip8.V[x] = i
       pressed = true
     }
   }
-  if !pressed { chip8.PC += 2 }
+  if !pressed { chip8.PC -= 2 } // repeat
 }
 func _EX9E(chip8 *Chip8, x uint8) {
   if IsKeyPressed(chip8.V[x]) { chip8.PC += 2 }
@@ -259,9 +259,11 @@ func _DXYN(chip8 *Chip8, x, y, n uint8) {
   chip8.V[0xF] = 0
   for i := 0; uint8(i) < n; i++ {
     data = chip8.memory[chip8.I + uint16(i)]
-    yPos = (uint(vy) + uint(i)) % HEIGHT
+    yPos = (uint(vy) + uint(i)) % HEIGHT // No clipping
+    // yPos = uint(math.Min(float64(uint(vy) + uint(i)), HEIGHT - 1)) // Clipping
     for j := 0; j < 8; j++ {
-      xPos = (uint(vx) + uint(7-j)) % WIDTH
+      xPos = (uint(vx) + uint(7-j)) % WIDTH // No clipping
+      // xPos = uint(math.Min(float64(uint(vx) + uint(7-j)), WIDTH - 1)) // Clipping
       idx := yPos * WIDTH + xPos      // Display buffer index
 
       Spx := (data >> j) & 0x1        // Sprite pixel

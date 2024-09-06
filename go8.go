@@ -14,7 +14,7 @@ var SPRITE_COLOR = rl.White
 
 func main() {
   // CLI
-  var ticksPtr = flag.Uint("ticks", 24, "Number of ticks per frame")
+  var ticksPtr = flag.Uint("ticks", 12, "Number of ticks per frame")
 
   flag.Parse()
 
@@ -44,7 +44,7 @@ func main() {
   var chip8Display = rl.LoadRenderTexture(WIDTH, HEIGHT)
   defer rl.UnloadRenderTexture(chip8Display);
 
-  var wave = WaveFromFreq(48000, 400.0)
+  var wave = WaveFromFreq(48000, 441.0)
   var sound = rl.LoadSoundFromWave(wave)
 //  defer rl.UnloadWave(wave) Dont unload bc WaveFromFreq uses Go's make data
   defer rl.UnloadSound(sound)
