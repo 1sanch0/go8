@@ -37,6 +37,7 @@ type Chip8 struct {
 
   dtimer uint8    // Delay timer register
   stimer uint8    // Sound timer register
+  acc float64     // Time accumulator to update timers
 
 	memory []uint8  // Memory
 
@@ -66,6 +67,7 @@ func Chip8_reset(chip8 *Chip8) {
 
   chip8.dtimer = 0
   chip8.stimer = 0
+  chip8.acc = 0
 
   for i := 0x200; i < len(chip8.memory); i++ {
     chip8.memory[i] = 0
@@ -87,11 +89,14 @@ func Chip8_load(chip8 *Chip8, filename string) {
   }
 }
 
-func Chip8_tick(chip8 *Chip8, dt float32) {
+func Chip8_tick(chip8 *Chip8, dt float64) {
   // Update timers
-  var increment = dt * 60.0
-  chip8.dtimer -= uint8(increment)
-  chip8.stimer -= uint8(increment)
+  chip8.acc += dt
+  if chip8.acc > (1.0/60.0) {
+    if chip8.dtimer > 0 { chip8.dtimer -= 1 }
+    if chip8.stimer > 0 { chip8.stimer -= 1 }
+    chip8.acc -= (1.0/60.0)
+  }
 
   // Fetch
   var lsb = uint16(chip8.memory[chip8.PC]); chip8.PC++;

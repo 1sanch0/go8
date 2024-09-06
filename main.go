@@ -2,15 +2,23 @@ package main
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 
-import "image/color"
+import (
+  "image/color"
+  "flag"
+)
+
+var LightBlue = rl.NewColor(93, 201, 226, 255)
 
 var BG_COLOR = rl.Black
 var SPRITE_COLOR = rl.White
 
 func main() {
+  var ticks uint32 = 24 // Ticks per frame
+  var hasRom = false
   var chip8 = Chip8_create()
+
   Chip8_reset(&chip8)
-  Chip8_load(&chip8, "6-keypad.ch8");
+  // Chip8_load(&chip8, "6-keypad.ch8");
 
   // NOTES:
   // - The sound timer counts down perpetually @ 60Hz
@@ -23,7 +31,7 @@ func main() {
   rl.InitAudioDevice()
   defer rl.CloseAudioDevice()
 
-	rl.SetTargetFPS(60)
+  rl.SetTargetFPS(60)
 
   var pxBuffer = make([]color.RGBA, WIDTH*HEIGHT);
   var chip8Display = rl.LoadRenderTexture(WIDTH, HEIGHT)
@@ -39,22 +47,39 @@ func main() {
 	var dstRec = rl.NewRectangle(0, 0, WIDTH, HEIGHT)
   var origin = rl.NewVector2(0, 0)
 
+  var d0, d1, dt float64
+  d0 = rl.GetTime()
 
 	for !rl.WindowShouldClose() {
-    var dt = rl.GetFrameTime()
+    // var dt = rl.GetFrameTime()
     var width, height = float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())
 
-    Chip8_tick(&chip8, dt)
+    for i := uint32(0); (i < ticks) && hasRom; i++ {
+      d1 = rl.GetTime()
+      dt = d1 - d0
+      Chip8_tick(&chip8, dt)
+      d0 = rl.GetTime()
 
-    // Copy Chip8's display buffer to a pixel buffer and then upload it to the texture
-    for i := 0; i < WIDTH * HEIGHT; i++ {
-      color := BG_COLOR
-      if chip8.display[i] == 1 {
-        color = SPRITE_COLOR
+      // Copy Chip8's display buffer to a pixel buffer and then upload it to the texture
+      for i := 0; i < WIDTH * HEIGHT; i++ {
+        color := BG_COLOR
+        if chip8.display[i] == 1 {
+          color = SPRITE_COLOR
+        }
+        pxBuffer[i] = color;
       }
-      pxBuffer[i] = color;
+      rl.UpdateTexture(chip8Display.Texture, pxBuffer)
     }
-    rl.UpdateTexture(chip8Display.Texture, pxBuffer)
+
+    // Drop in files
+    if rl.IsFileDropped() {
+      droppedFiles := rl.LoadDroppedFiles()
+      defer rl.UnloadDroppedFiles()
+
+      Chip8_reset(&chip8)
+      Chip8_load(&chip8, droppedFiles[0])
+      hasRom = true
+    }
 
     // Math for keeping texture centered, fitted to window and with the same aspect ratio
     origin = rl.NewVector2(0, 0)
@@ -75,7 +100,11 @@ func main() {
     // Draw
 		rl.BeginDrawing()
       rl.ClearBackground(BG_COLOR)
-      rl.DrawFPS(10, 10)
+
+      if !hasRom {
+        rl.DrawText("Drop in a ROM to start playing", int32(-origin.X+dstRec.Width/40), int32(-origin.Y+dstRec.Height/2), int32(dstRec.Height/8), LightBlue)
+      }
+
       rl.DrawTexturePro(chip8Display.Texture, srcRec, dstRec, origin, 0, rl.White)
 		rl.EndDrawing()
 	}
