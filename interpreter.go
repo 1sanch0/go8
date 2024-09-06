@@ -1,6 +1,9 @@
 package main
 
-import "math/rand/v2"
+import (
+  "math/rand/v2"
+  "os"
+)
 
 const WIDTH = 64
 const HEIGHT = 32
@@ -57,6 +60,17 @@ func Chip8_reset(chip8 *Chip8) {
   chip8.SP = MEM_SIZE - 1;
 
   // TODO: Reset
+}
+
+func Chip8_load(chip8 *Chip8, filename string) {
+  data, err := os.ReadFile(filename)
+  if err != nil {
+    panic(err)
+  }
+
+  for i := 0; i < len(data); i++ {
+    chip8.memory[0x200 + uint16(i)] = data[i]
+  }
 }
 
 func Chip8_tick(chip8 *Chip8, dt float32) {
@@ -174,12 +188,12 @@ func _2NNN(chip8 *Chip8, nnn uint16) {
   var lsb = uint8((chip8.PC >> 8) & 0xFF)
   var msb = uint8(chip8.PC & 0xFF)
 
-  chip8.memory[chip8.SP] = lsb; chip8.SP++;
-  chip8.memory[chip8.SP] = msb; chip8.SP++;
+  chip8.memory[chip8.SP] = lsb; chip8.SP--;
+  chip8.memory[chip8.SP] = msb; chip8.SP--;
 }
 func _00EE(chip8 *Chip8) {
-  var lsb = uint16(chip8.memory[chip8.SP]); chip8.SP--;
-  var msb = uint16(chip8.memory[chip8.SP]); chip8.SP--;
+  var lsb = uint16(chip8.memory[chip8.SP]); chip8.SP++;
+  var msb = uint16(chip8.memory[chip8.SP]); chip8.SP++;
 
   chip8.PC = ((lsb << 8) & 0xFF00) | (msb & 0x00FF)
 }
@@ -204,23 +218,25 @@ func _ANNN(chip8 *Chip8, nnn uint16) { chip8.I = nnn }
 func _FX1E(chip8 *Chip8, x uint8) { chip8.I += uint16(x) }
 func _DXYN(chip8 *Chip8, x, y, n uint8) {
   var vx, vy = chip8.V[x], chip8.V[y]
-  var xPos, yPos, data uint8
+  var xPos, yPos uint
+  var data uint8
 
   chip8.V[0xF] = 0
-  for i := uint8(0); i < n; i++ {
+  for i := 0; uint8(i) < n; i++ {
     data = chip8.memory[chip8.I + uint16(i)]
-    yPos = (vy + i) % HEIGHT
-    for j := uint8(8); j >= 0; j-- {
-      xPos = (vx + j) % WIDTH
+    yPos = (uint(vy) + uint(i)) % HEIGHT
+    for j := 0; j < 8; j++ {
+      xPos = (uint(vx) + uint(7-j)) % WIDTH
+      idx := yPos * WIDTH + xPos      // Display buffer index
 
-      Spx := ((data >> j) & 0x1)                // Sprite pixel
-      Dpx := chip8.display[yPos * WIDTH + xPos] // Display pixel
+      Spx := (data >> j) & 0x1        // Sprite pixel
+      Dpx := chip8.display[idx] & 0x1 // Display pixel
 
-      px := Spx ^ Dpx                           // New pixel
+      px := Spx ^ Dpx                 // New pixel
 
       if (Dpx == 1 && Dpx == 0) { chip8.V[0xF] = 1 }
 
-      chip8.display[yPos * WIDTH + xPos] = px;
+      chip8.display[idx] = px;
     }
   }
 }
