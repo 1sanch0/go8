@@ -4,10 +4,13 @@ import rl "github.com/gen2brain/raylib-go/raylib"
 
 import "image/color"
 
+var BG_COLOR = rl.Black
+var SPRITE_COLOR = rl.White
+
 func main() {
   var chip8 = Chip8_create()
   Chip8_reset(&chip8)
-  Chip8_load(&chip8, "test_opcode.ch8");
+  Chip8_load(&chip8, "3-corax+.ch8");
 
   // NOTES:
   // - The delay timer counts down perpetually @ 60Hz
@@ -35,23 +38,17 @@ func main() {
 
     Chip8_tick(&chip8, dt)
 
+    // Copy Chip8's display buffer to a pixel buffer and then upload it to the texture
     for i := 0; i < WIDTH * HEIGHT; i++ {
-      color := rl.Black
+      color := BG_COLOR
       if chip8.display[i] == 1 {
-        color = rl.White
+        color = SPRITE_COLOR
       }
       pxBuffer[i] = color;
     }
     rl.UpdateTexture(chip8Display.Texture, pxBuffer)
 
-    // TODO: Copy chip8 display buffer to raylib texture
-    // TODO REMOVE THIS LATER
-    // rl.BeginTextureMode(chip8Display)
-    //   rl.ClearBackground(rl.DarkGray)
-    //   rl.DrawText("  go8", 10, 10, 3, rl.RayWhite)
-    // rl.EndTextureMode()
-
-    // Math for keeping texture centered and with the same aspect ratio
+    // Math for keeping texture centered, fitted to window and with the same aspect ratio
     origin = rl.NewVector2(0, 0)
     if (width / (WIDTH / HEIGHT)) > height {
       dstRec.Width = height * (WIDTH / HEIGHT)
@@ -67,6 +64,7 @@ func main() {
       if origin.Y > 0 { origin.Y = 0 }
     }
 
+    // Draw
 		rl.BeginDrawing()
       rl.ClearBackground(rl.Green)
       rl.DrawTexturePro(chip8Display.Texture, srcRec, dstRec, origin, 0, rl.White)

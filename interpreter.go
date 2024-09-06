@@ -158,14 +158,15 @@ func _8XY5(chip8 *Chip8, x,  y uint8) {
   var borrow uint8 = 1;
   if vy > vx { borrow = 0; }
 
+  chip8.V[x] -= chip8.V[y];
   chip8.V[0xF] = borrow;
 }
 func _8XY7(chip8 *Chip8, x,  y uint8) {
   var vx, vy = uint16(chip8.V[x]), uint16(chip8.V[y])
   var borrow uint8 = 1;
-  if vy > vx { borrow = 0; }
+  if vy < vx { borrow = 0; }
 
-  chip8.V[x] = uint8(vx - vy);
+  chip8.V[x] = uint8(vy - vx);
   chip8.V[0xF] = borrow;
 }
 func _8XY2(chip8 *Chip8, x,  y uint8) { chip8.V[x] &= chip8.V[y] }
@@ -190,10 +191,14 @@ func _2NNN(chip8 *Chip8, nnn uint16) {
 
   chip8.memory[chip8.SP] = lsb; chip8.SP--;
   chip8.memory[chip8.SP] = msb; chip8.SP--;
+
+  chip8.PC = nnn;
 }
 func _00EE(chip8 *Chip8) {
-  var lsb = uint16(chip8.memory[chip8.SP]); chip8.SP++;
-  var msb = uint16(chip8.memory[chip8.SP]); chip8.SP++;
+  chip8.SP++;
+  var msb = uint16(chip8.memory[chip8.SP]);
+  chip8.SP++;
+  var lsb = uint16(chip8.memory[chip8.SP]);
 
   chip8.PC = ((lsb << 8) & 0xFF00) | (msb & 0x00FF)
 }
@@ -215,7 +220,7 @@ func _EXA1(chip8 *Chip8, x uint8) {
   // TODO: Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
 }
 func _ANNN(chip8 *Chip8, nnn uint16) { chip8.I = nnn }
-func _FX1E(chip8 *Chip8, x uint8) { chip8.I += uint16(x) }
+func _FX1E(chip8 *Chip8, x uint8) { chip8.I += uint16(chip8.V[x]) }
 func _DXYN(chip8 *Chip8, x, y, n uint8) {
   var vx, vy = chip8.V[x], chip8.V[y]
   var xPos, yPos uint
@@ -248,9 +253,9 @@ func _00E0(chip8 *Chip8) {
 func _FX29(chip8 *Chip8, x uint8) { chip8.I = 5 * uint16(chip8.V[x]) + FONTS_ADDR; }
 func _FX33(chip8 *Chip8, x uint8) {
   var vx = chip8.V[x]
-  chip8.memory[chip8.I] = vx / 100;       chip8.I++;
-  chip8.memory[chip8.I] = (vx / 10) % 10; chip8.I++;
-  chip8.memory[chip8.I] = vx % 10;        chip8.I++;
+  chip8.memory[chip8.I+0] = vx / 100;
+  chip8.memory[chip8.I+1] = (vx / 10) % 10;
+  chip8.memory[chip8.I+2] = vx % 10;
 }
 func _FX55(chip8 *Chip8, x uint8) {
   for i := uint8(0); i <= x; i++ {
