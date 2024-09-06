@@ -10,17 +10,18 @@ var SPRITE_COLOR = rl.White
 func main() {
   var chip8 = Chip8_create()
   Chip8_reset(&chip8)
-  Chip8_load(&chip8, "3-corax+.ch8");
+  Chip8_load(&chip8, "6-keypad.ch8");
 
   // NOTES:
-  // - The delay timer counts down perpetually @ 60Hz
   // - The sound timer counts down perpetually @ 60Hz
   //   - The minimum value the timer will respond is 02 (TODO)
 
-  rl.SetTraceLogLevel(rl.LogNone);
+  // rl.SetTraceLogLevel(rl.LogNone);
   rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(WIDTH * 10, HEIGHT * 10, "go8 - a simple chip8 interperter in go")
 	defer rl.CloseWindow()
+  rl.InitAudioDevice()
+  defer rl.CloseAudioDevice()
 
 	rl.SetTargetFPS(60)
 
@@ -28,9 +29,16 @@ func main() {
   var chip8Display = rl.LoadRenderTexture(WIDTH, HEIGHT)
   defer rl.UnloadRenderTexture(chip8Display);
 
+  var wave = WaveFromFreq(48000, 400.0)
+  var sound = rl.LoadSoundFromWave(wave)
+//  defer rl.UnloadWave(wave) Dont unload bc WaveFromFreq uses Go's make data
+  defer rl.UnloadSound(sound)
+  // TODO: audio doesn't work
+
 	var srcRec = rl.NewRectangle(0, 0, WIDTH, HEIGHT)
 	var dstRec = rl.NewRectangle(0, 0, WIDTH, HEIGHT)
   var origin = rl.NewVector2(0, 0)
+
 
 	for !rl.WindowShouldClose() {
     var dt = rl.GetFrameTime()
@@ -66,7 +74,8 @@ func main() {
 
     // Draw
 		rl.BeginDrawing()
-      rl.ClearBackground(rl.Green)
+      rl.ClearBackground(BG_COLOR)
+      rl.DrawFPS(10, 10)
       rl.DrawTexturePro(chip8Display.Texture, srcRec, dstRec, origin, 0, rl.White)
 		rl.EndDrawing()
 	}

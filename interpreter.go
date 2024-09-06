@@ -229,14 +229,20 @@ func _FX15(chip8 *Chip8, x uint8) { chip8.dtimer = chip8.V[x] }
 func _FX07(chip8 *Chip8, x uint8) { chip8.V[x] = chip8.dtimer }
 func _FX18(chip8 *Chip8, x uint8) { chip8.stimer = chip8.V[x] }
 func _FX0A(chip8 *Chip8, x uint8) {
-  var key uint8 = 0; // TODO: wait for a keypress
-  chip8.V[x] = key;
+  pressed := false
+  for i := uint8(0); i <= 0xF; i++ {
+    if IsKeyPressed(i) {
+      chip8.V[x] = i
+      pressed = true
+    }
+  }
+  if !pressed { chip8.PC += 2 }
 }
 func _EX9E(chip8 *Chip8, x uint8) {
-  // TODO: Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+  if IsKeyPressed(chip8.V[x]) { chip8.PC += 2 }
 }
 func _EXA1(chip8 *Chip8, x uint8) {
-  // TODO: Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+  if !IsKeyPressed(chip8.V[x]) { chip8.PC += 2 }
 }
 func _ANNN(chip8 *Chip8, nnn uint16) { chip8.I = nnn }
 func _FX1E(chip8 *Chip8, x uint8) { chip8.I += uint16(chip8.V[x]) }
