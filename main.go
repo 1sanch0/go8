@@ -13,18 +13,25 @@ var BG_COLOR = rl.Black
 var SPRITE_COLOR = rl.White
 
 func main() {
-  var ticks uint32 = 24 // Ticks per frame
-  var hasRom = false
+  // CLI
+  var ticksPtr = flag.Uint("ticks", 24, "Number of ticks per frame")
+
+  flag.Parse()
+
+  var tail = flag.Args()
+  var ticks = *ticksPtr
+  var hasRom = len(tail) > 0
+
+  // Main
   var chip8 = Chip8_create()
 
   Chip8_reset(&chip8)
-  // Chip8_load(&chip8, "6-keypad.ch8");
 
-  // NOTES:
-  // - The sound timer counts down perpetually @ 60Hz
-  //   - The minimum value the timer will respond is 02 (TODO)
+  if hasRom {
+    Chip8_load(&chip8, tail[0]);
+  }
 
-  // rl.SetTraceLogLevel(rl.LogNone);
+  rl.SetTraceLogLevel(rl.LogNone);
   rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(WIDTH * 10, HEIGHT * 10, "go8 - a simple chip8 interperter in go")
 	defer rl.CloseWindow()
@@ -54,7 +61,7 @@ func main() {
     // var dt = rl.GetFrameTime()
     var width, height = float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())
 
-    for i := uint32(0); (i < ticks) && hasRom; i++ {
+    for i := uint(0); (i < ticks) && hasRom; i++ {
       d1 = rl.GetTime()
       dt = d1 - d0
       Chip8_tick(&chip8, dt)
