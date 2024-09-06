@@ -56,10 +56,24 @@ func Chip8_create() (chip8 Chip8) {
 }
 
 func Chip8_reset(chip8 *Chip8) {
+  for i := 0; i < len(chip8.V); i++ {
+    chip8.V[i] = 0
+  }
+  chip8.I = 0
+
   chip8.PC = 0x200;
   chip8.SP = MEM_SIZE - 1;
 
-  // TODO: Reset
+  chip8.dtimer = 0
+  chip8.stimer = 0
+
+  for i := 0x200; i < len(chip8.memory); i++ {
+    chip8.memory[i] = 0
+  }
+
+  for i := 0; i < len(chip8.display); i++ {
+    chip8.display[i] = 0
+  }
 }
 
 func Chip8_load(chip8 *Chip8, filename string) {
@@ -74,6 +88,11 @@ func Chip8_load(chip8 *Chip8, filename string) {
 }
 
 func Chip8_tick(chip8 *Chip8, dt float32) {
+  // Update timers
+  var increment = dt * 60.0
+  chip8.dtimer -= uint8(increment)
+  chip8.stimer -= uint8(increment)
+
   // Fetch
   var lsb = uint16(chip8.memory[chip8.PC]); chip8.PC++;
   var msb = uint16(chip8.memory[chip8.PC]); chip8.PC++;
@@ -107,7 +126,7 @@ func Chip8_tick(chip8 *Chip8, dt float32) {
         case 0x6: _8XY6(chip8, x, y)
         case 0x7: _8XY7(chip8, x, y)
         case 0xE: _8XYE(chip8, x, y)
-        default: // TODO: error of some sorts
+        default: panic("Invalid opcode")
       }
     case (0x9000 <= opcode) && (opcode < 0xA000): _9XY0(chip8, x, y)
     case (0xA000 <= opcode) && (opcode < 0xB000): _ANNN(chip8, nnn)
@@ -118,7 +137,7 @@ func Chip8_tick(chip8 *Chip8, dt float32) {
       switch nn {
         case 0x9E: _EX9E(chip8, x)
         case 0xA1: _EXA1(chip8, x)
-        default: // TODO: error of some sorts
+        default: panic("Invalid opcode")
       }
     case (0xF000 <= opcode):
       switch nn {
@@ -131,12 +150,12 @@ func Chip8_tick(chip8 *Chip8, dt float32) {
         case 0x33: _FX33(chip8, x);
         case 0x55: _FX55(chip8, x);
         case 0x65: _FX65(chip8, x);
-        default: // TODO: error of some sorts
+        default: panic("Invalid opcode")
       }
-    default: // TODO: error of some sorts
+    default: panic("Invalid opcode")
   }
 
-  // Update timers
+  // Sound
   // TODO
 }
 
